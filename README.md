@@ -31,14 +31,13 @@ python3 main.py --s arxiv -c cs.AI -f arxiv.json -p
 ### API
 The package can be called using the following arguments:
 
-| Argument | Description |
-| --- | --- |
-| -s, --source | The source to crawl publications from. |
-| -c, --category | The category to crawl publications from. |
-| -f, --file | The file containing the metadata of all publications. |
-| -p, --process | Whether to process the crawled publications. |
-
+| Argument | Type | Description |
+| --- | --- | --- |
+| -s, --source | required | The source to crawl publications from. |
+| -f, --file | required | The file containing the metadata of all publications. |
+| -c, --category | optional | The category to crawl publications from. |
+| -p, --process | optional | Whether to process the crawled publications. |
+| -r, --rows | optional | Number of entries to process (can be useful in development mode) |
 
 # License
-
 Copyright (c) 2023, Jonas Wilinski
