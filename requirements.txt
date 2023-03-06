@@ -1,0 +1,6 @@
+# For the spinner
+alive_progress
+typing
+
+termcolor
+argparse
