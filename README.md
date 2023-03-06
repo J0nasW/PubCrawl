@@ -9,17 +9,17 @@ The idea is to provide a simple interface to crawl scientific publications from 
 The package is currently in a very early stage of development. The following sources are currently supported:
 - [arXiv](https://arxiv.org/)
 
-# Installation
+## Installation
 To start, clone the repository and install the package using the requirements file:
 
 ```bash
-git clone
+git clone https://github.com/J0nasW/PubCrawl.git
 cd pubcrawl
 
 pip install -r requirements.txt
 ```
 
-# Usage
+## Usage
 The package is designed to be used as a library. The following example shows how to use the package to crawl publications from arXiv.
 
 ### Example: Crawling publications from arXiv
@@ -38,6 +38,21 @@ The package can be called using the following arguments:
 | -c, --category | optional | The category to crawl publications from. |
 | -p, --process | optional | Whether to process the crawled publications. |
 | -r, --rows | optional | Number of entries to process (can be useful in development mode) |
+
+# Downstream Tasks
+This package can be used in combination with other packages to perform downstream tasks. The following packages are currently available:
+- [PubGraph](https://github.com/J0nasW/PubGraph)
+
+When cloned the repository, you can use the extra flag **-d** to activate downstream tasks. PubCrawl will then automatically clone the downstream task repository and install the package using the requirements file.
+
+The following example shows how to crawl all publications from the category `cs.AI` and create a graph from them.
+
+```bash
+python3 main.py --s arxiv -c cs.AI -f arxiv.json -p -d pubgraph
+```
+
+### Using PubGraph to create publication graphs
+tbd
 
 # License
 Copyright (c) 2023, Jonas Wilinski

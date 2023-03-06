@@ -1,6 +1,7 @@
 # For the spinner
 alive_progress
 typing
+pandas
 
 termcolor
 argparse
