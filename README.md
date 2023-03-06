@@ -1,7 +1,7 @@
 # PubCrawl
 PubCrawl - The scientific publication crawling suite.
 
-# Overview
+### Overview
 PubCrawl is a Python package for crawling scientific publications.
 The idea is to provide a simple interface to crawl scientific publications from different sources. The package is designed to be easily extensible to support new sources.
 
