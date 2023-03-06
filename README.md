@@ -7,7 +7,7 @@ The idea is to provide a simple interface to crawl scientific publications from 
 
 ### Current Status
 The package is currently in a very early stage of development. The following sources are currently supported:
-- arxiv
+- [arXiv](https://arxiv.org/)
 
 # Installation
 To start, clone the repository and install the package using the requirements file:
@@ -20,9 +20,9 @@ pip install -r requirements.txt
 ```
 
 # Usage
-The package is designed to be used as a library. The following example shows how to use the package to crawl publications from arxiv.
+The package is designed to be used as a library. The following example shows how to use the package to crawl publications from arXiv.
 
-### Example: Crawling publications from arxiv
+### Example: Crawling publications from arXiv
 The following example shows how to crawl publications from arXiv. The example crawls all publications from the category `cs.AI`, processes them and saves the results to a JSON file. Note, that you have to provide a valid JSON file containing the metadata of all arXiv publications. You can download this file from the Kaggle dataset [here](https://www.kaggle.com/Cornell-University/arxiv).
 
 ```bash
