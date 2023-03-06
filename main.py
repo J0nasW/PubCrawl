@@ -4,88 +4,96 @@
 #
 ###############################################################################################
 
-from kaggle.api.kaggle_api_extended import KaggleApi
-import pandas as pd
-import streamlit as st
-import json, os
+from termcolor import colored
+import argparse
+import os
 
-### STREAMLIT Init:
+from helpers.cli_loader import load_bar
+from datasources.arxiv import *
 
-# SETTING PAGE CONFIG TO WIDE MODE AND ADDING A TITLE AND FAVICON
-st.set_page_config(layout="wide", page_title="PubCrawl", page_icon="📚")
 
-st.title("📚 PubCrawl: A Python library for crawling scientific publications.")
 
-st.markdown("This is a Python library for crawling scientific publications. It is currently in development. Please check back later for updates.")
-st.markdown("It is suggested that you run this instance with [tmux](https://github.com/tmux/tmux) because downloads can take a lot of time.")
+if __name__ == "__main__":
 
-with st.form(key="pub_crawl_form"):
-    a_tab, b_tab, c_tab = st.tabs(["arXiv", "OpenAlex", "PubMed"])
+    # Welcome message
+    print(colored("Welcome to PubCrawl!", "green", attrs=["bold"]))
+    print(colored("--------------------", "green", attrs=["bold"]))
+    print("")
 
-    with a_tab:
-        use_arxiv = st.checkbox("arXiv", value=False, key="arxiv_checkbox")
+    # Instantiate the parser
+    parser = argparse.ArgumentParser(description="PubCrawl: A Python library for crawling and cleaning scientific publications.")
 
-        metadata_procurement = st.selectbox("Metadata Procurement", ["Kaggle (not available yet)", "Local File"])
+    # Add the arguments
+    parser.add_argument("-s", "--source", type=str, help="Choose the datasource. Example: -s arxiv", required=True)
+    parser.add_argument("-f", "--file", type=str, help="Load the arXiv dataset from a JSON file. Use the Kaggle arXiv Dataset JSON. Example: -f arxiv-metadata-oai-snapshot.json", required=True)
+    parser.add_argument("-c", "--category", type=str, help="Filter the arXiv dataset by category. Example: -c cs.AI")
+    parser.add_argument("-p", "--process", action="store_true", help="Process the arXiv dataset: PDF2TXT, Text Cleaning, ... Example: -p")
+    parser.add_argument("-g", "--storage_size", type=int, help="Set the maximum storage size for the arXiv dataset download. Lower storage means longer processing. [GB] Example: -s 100")
+    parser.add_argument("-r", "--rows", type=int, help="Set the number of rows to be processed. Example: -r 1000")
 
-        st.markdown("### First download the current arXiv Metadata JSON from [Kaggle Datasets](https://www.kaggle.com/Cornell-University/arxiv).")
+    # Execute the parse_args() method
+    args = parser.parse_args()
 
-        st.markdown("### Then provide the file path to the downloaded file below.")
-        st.markdown("It is recommended that you place the file in the `datasources` folder.")
+    if args.source == "arxiv":
 
-        metadata_file = st.text_input("Metadata File Path", value="datasources/arxiv-metadata-oai-snapshot.json")
+        # Integrity checks
+        if not os.path.isfile(args.file):
+            print(colored("The provided file does not exist.", "red"))
+            os._exit(1)
 
-        st.markdown("### Select a category to filter the arXiv Metadata JSON by.")
-        st.markdown("If you do not want to filter the arXiv Metadata JSON, leave this field blank. You can find a list of arXiv categories [here](https://arxiv.org/category_taxonomy).")
-        arxiv_category = st.text_input("arXiv Category", placeholder="cs.AI")
+        if args.storage_size and not args.process:
+            print(colored("You have provided a storage limit but do not wish to process the PDFs. This will result in an error.", "red"))
+            os._exit(1)
 
-        st.markdown("### Select some processing options.")
-        st.multiselect("Processing Options", ["Download Fulltexts", "Transformer Keywords for Abstracts", "..."])
-    
-    with b_tab:
-        st.checkbox("OpenAlex", value=False, key="openalex_checkbox")
+        # Print the chosen arguments
 
-    with c_tab:
-        st.checkbox("PubMed", value=False, key="pubmed_checkbox")
+        print("")
+        print(colored("✓ You have chosen the arXiv Download.", "yellow"))
+        print(colored("✓ The file you have provided is valid.", "yellow"))
 
-    submit_button = st.form_submit_button(label="Submit")
+        if args.category:
+            print(colored("✓ You have chosen the category / categories: {}".format(args.category), "yellow"))
 
-if submit_button:
-    if use_arxiv:
-        st.write("You have chosen to analyze arXiv.")
-        if metadata_procurement == "Kaggle":
-            st.write("You have chosen to download the arXiv Metadata JSON from Kaggle. Please provide your Kaggle API credentials. We will never store your credentials.")
-            # with st.form(key="kaggle_credentials_form"):
-            #     kaggle_username = st.text_input("Kaggle Username")
-            #     kaggle_key = st.text_input("Kaggle Key")
-            #     submit_kaggle_credentials_button = st.form_submit_button(label="Submit")
-            # if submit_kaggle_credentials_button:
-            #     st.markdown("Downloading arXiv Metadata JSON file from Kaggle...")
-            #     with st.spinner("Downloading arXiv Metadata JSON file from Kaggle..."):
-            #         api_token = {"username":kaggle_username,"key":kaggle_key}
-            #         with open("tmp/kaggle.json", "w") as file:
-            #             json.dump(api_token, file)
-            #         os.system("chmod 600 /tmp/kaggle.json")
-            #         os.system("kaggle config path -p /tmp")
-            #         os.system("kaggle datasets download -d Cornell-University/arxiv -p tmp")
-            #         for file in os.listdir("tmp"):
-            #             if file.endswith(".zip"):
-            #                 os.system(f"unzip tmp/{file} -d tmp")
-            #                 os.system(f"rm tmp/{file}")
-            #         arxiv_metadata = api.dataset_download_file("Cornell-University/arxiv", path="tmp/arxiv-metadata-oai-snapshot.json", unzip=True)
-            #    st.success("Download complete!")
+        if args.process:
+            print(colored("✓ You have chosen to process the data afterwards.", "yellow"))
+
+        if args.storage_size:
+            print(colored("✓ You have chosen a storage size of {} GB.".format(args.storage_size), "yellow"))
+
+        print("")
+        print(colored("Loading the Metadata...", "green", attrs=["bold"]))
+        print("")
+
+        # Load the arXiv JSON and filter for the chosen category
+        with load_bar(colored("Filtering arXiv Metadata JSON by category...", "yellow")):
+            arxiv_metadata_df = preprocess(arxiv_kaggle_file=args.file, arxiv_category=args.category, arxiv_rows=args.rows)
         
-        # Load the file into a Pandas DataFrame
-        st.markdown("Loading arXiv Metadata JSON file into a Pandas DataFrame...")
-        with st.spinner("Loading arXiv Metadata JSON file into a Pandas DataFrame..."):
-            if metadata_procurement == "Kaggle":
-                arxiv_metadata = pd.read_json("tmp/arxiv-metadata-oai-snapshot.json")
-            elif metadata_procurement == "Local File":
-                arxiv_metadata = pd.read_json(arxiv_metadata_file)
+        print("")
+        print(colored("Successfully loaded the arXiv metadata and saved it to arxiv_metadata.json.", "green", attrs=["bold"]))
+        print("")
 
-        st.success("Load complete!")
+        # Download the arXiv dataset
+        with load_bar(colored("Downloading arXiv PDFs from GCP", "yellow")):
+            download_success = download(arxiv_metadata_df, arxiv_storage_size=args.storage_size, arxiv_process=args.process)
 
-        st.write(arxiv_metadata.head())
+        if download_success:
 
+            if args.process:
+                print("")
+                print(colored("Successfully processed all PDFs to arxiv_fulltext.json", "green", attrs=["bold"]))
+                print("")
+            else:
+                print("")
+                print(colored("Successfully downloaded all PDFs to ./tmp/arxiv_pdf", "green", attrs=["bold"]))
+                print("")
 
+        else:
+            print(colored("An error occured during the download and processing phase.", "red"))
+            os._exit(1)
 
+        print(colored("Thank you for using PubCrawl. Good bye!", "green", attrs=["bold"]))
+    
+    else:
+        print(colored("Please choose a valid datasource.", "red"))
+        os._exit(1)
 
