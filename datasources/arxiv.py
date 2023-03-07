@@ -12,6 +12,7 @@ import os
 import shutil
 from functools import partial
 from multiprocessing import Pool
+from termcolor import colored
 
 from pipeline import pdf2txt
 
@@ -29,29 +30,49 @@ def preprocess(arxiv_kaggle_file, arxiv_category=None, arxiv_rows=None):
     arxiv_metadata_json = pd.read_json(arxiv_kaggle_file, lines=True, orient="records")
     if arxiv_rows is not None:
         arxiv_metadata_json = arxiv_metadata_json.head(arxiv_rows)
+    # Print the number of rows in the arXiv Metadata JSON
+    print("Loaded {} entreis from the arXiv metadata JSON file.".format(len(arxiv_metadata_json)))
+
     if arxiv_category is not None:
-        # Filter the arXiv Metadata JSON by category
-        arxiv_metadata_df = arxiv_metadata_json[arxiv_metadata_json["categories"].str.contains(arxiv_category)]
+        # Split the category string into a list if multiple categories are provided. Else put the category into a list
+        if "OR" in arxiv_category:
+            arxiv_category = arxiv_category.split(" OR ")
+            # Filter the arXiv Metadata JSON by category list with OR logic
+            arxiv_metadata_df = arxiv_metadata_json[arxiv_metadata_json["categories"].str.contains("|".join(arxiv_category))]
+        elif "AND" in arxiv_category:
+            arxiv_category = arxiv_category.split(" AND ")
+            # Filter the arXiv Metadata JSON by category list with AND logic
+            arxiv_metadata_df = arxiv_metadata_json[arxiv_metadata_json["categories"].str.contains("&".join(arxiv_category))]
+        else:
+            # Filter the arXiv Metadata JSON by single category
+            arxiv_metadata_df = arxiv_metadata_json[arxiv_metadata_json["categories"].str.contains(arxiv_category)]
+
+        # Print the number of rows in the filtered arXiv Metadata df
+        print("Filtered out the categories " + str(arxiv_category) + " to a total number of " + str(arxiv_metadata_df["id"].count()) + " entries.")
     else:
         arxiv_metadata_df = arxiv_metadata_json
+
+    if arxiv_metadata_df["id"].count() == 0:
+        print(colored("No entries found for the given category. Please check the categories and try again.", "red", attrs=["bold"]))
+        exit()
     
     # Save the filtered arXiv Metadata JSON to a JSON file
     arxiv_metadata_df.to_json("arxiv_metadata.json", orient="records", lines=True)
 
     return arxiv_metadata_df
 
-def process(arxiv_metadata_df, arxiv_storage_size=None):
+def process(arxiv_metadata_df, pdf_dir, arxiv_storage_size=None):
     try:
         # Convert the PDFs to text and save them to a JSON file
 
-        globber = os.path.join("./tmp/arxiv_pdf", '**/*.pdf') # search expression for glob.glob
+        globber = os.path.join(pdf_dir, '**/*.pdf') # search expression for glob.glob
         pdffiles = pdf2txt.sorted_files(globber)  # a list of path
 
         CPU_COUNT = os.cpu_count() - 2
         # CPU_COUNT = 4
         print("Using " + str(CPU_COUNT) + " cores (" + str(os.cpu_count()) + " are available).")
         pool = Pool(CPU_COUNT)
-        result = pool.map(partial(pdf2txt.convert_safe, timelimit=TIMELIMIT), pdffiles)
+        pool.map(partial(pdf2txt.convert_safe, timelimit=TIMELIMIT), pdffiles)
         pool.close()
         pool.join()
 
@@ -153,7 +174,7 @@ def download(arxiv_metadata_df, arxiv_storage_size=None, arxiv_process=False):
 
         if arxiv_process:
             # Process the PDFs
-            is_processed = process(arxiv_metadata_df)
+            is_processed = process(arxiv_metadata_df, "./tmp/arxiv_pdf")
 
             # Delete the PDFs
             os.system("rm -rf ./tmp/arxiv_pdf")
@@ -173,3 +194,11 @@ def download(arxiv_metadata_df, arxiv_storage_size=None, arxiv_process=False):
     except Exception as e:
         print("Error: " + str(e))
         return False
+    
+def process_local_pdfs(arxiv_metadata_df, arxiv_local_PDF_dir):    
+    if not os.path.exists("./tmp/arxiv_txt"):
+        os.makedirs("./tmp/arxiv_txt")
+
+    is_processed = process(arxiv_metadata_df, arxiv_local_PDF_dir)
+
+    return is_processed

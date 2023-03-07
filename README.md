@@ -8,6 +8,7 @@ The idea is to provide a simple interface to crawl scientific publications from 
 ### Current Status
 The package is currently in a very early stage of development. The following sources are currently supported:
 - [arXiv](https://arxiv.org/)
+- pdfs - Plain PDF Files
 
 ## Installation
 To start, clone the repository and install the package using the requirements file:
@@ -34,8 +35,9 @@ The package can be called using the following arguments:
 | Argument | Type | Description |
 | --- | --- | --- |
 | -s, --source | required | The source to crawl publications from. |
-| -f, --file | required | The file containing the metadata of all publications. |
-| -c, --category | optional | The category to crawl publications from. |
+| -f, --file | optional | The file containing the metadata of all publications. |
+| -l, --local_PDFS | optional | Use local PDFs and provide a PDF dicrectory instead of downloading them from GCP. |
+| -c, --category | optional | The category to crawl publications from. Delimit multiple categories with a | for OR and & for AND. Example: "cs.AI AND cs.CL" |
 | -p, --process | optional | Whether to process the crawled publications. |
 | -r, --rows | optional | Number of entries to process (can be useful in development mode) |
 
@@ -54,5 +56,6 @@ python3 main.py --s arxiv -c cs.AI -f arxiv.json -p -d pubgraph
 ### Using PubGraph to create publication graphs
 tbd
 
-# License
+# License & Contributions
 Copyright (c) 2023, Jonas Wilinski
+A lot of code regarding the PDF2TXT conversion is taken from [this repository](https://github.com/mattbierbaum/arxiv-public-datasets), which is licensed under the MIT license. Thank you, Matt Bierbaum, Colin Clement, Kevin O'Keeffe, Alex Alemi for sharing your code!
